@@ -127,6 +127,8 @@ struct ContentView: View {
 
     @State private var orientation = UIDeviceOrientation.unknown
 
+    @State private var learnRange = 0
+    
     var body: some View {
         VStack(spacing: 0) {
             if useDegree {
@@ -136,6 +138,9 @@ struct ContentView: View {
             if settings.learnMode == .randomNotes {
                 extraPracticView
                     .padding(.bottom, 5)
+            } else if settings.learnMode == .randomNumber{
+                randomNumView
+                    .padding(.bottom, 5)
             }
             if settings.rowCount == .double {
                 if useDegree {
@@ -144,6 +149,8 @@ struct ContentView: View {
                 chordsView2
                 if settings.learnMode == .randomNotes {
                     extraPracticView2
+                } else if settings.learnMode == .randomNumber {
+                    randomNumView
                 }
             }
             Button(action: {
@@ -170,7 +177,8 @@ struct ContentView: View {
         .onTapGesture {
             showSheet = true
         }
-        .sheet(isPresented: $showSheet, content: { Settings(selectedChords: $selectedChords, hasTochords: $hasToChords, settings: $settings) })
+        .sheet(isPresented: $showSheet, content: { Settings(selectedChords: $selectedChords,
+            hasTochords: $hasToChords, settings: $settings, learnRange: $learnRange) })
         .onAppear {
             settings.chordsSum.setFromInteger(UserDefaults.standard.integer(forKey: "chordSum"))
             settings.rowCount.setFromInteger(UserDefaults.standard.integer(forKey: "rowCount"))
@@ -182,6 +190,8 @@ struct ContentView: View {
             useDegree = UserDefaults.standard.bool(forKey: "useDegree")
             selectedChords = UserDefaults.standard.string(forKey: "selectedChords") ?? ""
             hasToChords = UserDefaults.standard.string(forKey: "hasToChords") ?? ""
+            learnRange = UserDefaults.standard.integer(forKey: "learnRange")
+
             hasToChordsArray = hasToChordGen()
             
             chords = chordGen()
@@ -201,6 +211,13 @@ struct ContentView: View {
         .onChange(of: hasToChords, perform: { newValue in
             UserDefaults.standard.set(newValue, forKey: "hasToChords")
         })
+        .onChange(of: hasToChords, perform: { newValue in
+            UserDefaults.standard.set(newValue, forKey: "hasToChords")
+        })
+        .onChange(of: learnRange, perform: { newValue in
+            print("Test2")
+            UserDefaults.standard.set(newValue, forKey: "learnRange")
+        })
         .onRotate(perform: { newOrientation in
             orientation = newOrientation
             chords = chordGen()
@@ -211,6 +228,30 @@ struct ContentView: View {
             chordsStringsState2 = chordState.2
             chordsDegreeState2 = chordState.3
         })
+    }
+    
+    var randomNumView: some View {
+        HStack(spacing: 0) {
+            if chordsDegreeState.count > 0 && learnRange > 0 {
+                ForEach(0..<4) { count in
+                    ZStack {
+                        Text("\(Int.random(in: 1...learnRange))")
+                            .font(.system(size: 20))
+                        .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .background(Color.orange)
+                        
+                        if settings.chordsSum == .two || settings.chordsSum == .random {
+                            Text("\(Int.random(in: 0...learnRange))")
+                                .font(.system(size: 20))
+                            .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
+                            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .offset(x: PercSize.width(10))
+                        }
+                    }
+                }
+            }
+        }
     }
     
     var extraPracticView: some View {
@@ -302,6 +343,10 @@ struct ContentView: View {
             case "l":
                 continue
             case "t":
+                continue
+            case "6":
+                continue
+            case "7":
                 continue
             default:
                 returnString.append(letterChord)
@@ -767,6 +812,9 @@ struct Settings: View {
 
     @Binding var settings: SettingsData
     
+    @Binding var learnRange: Int
+    @State private var learnRangeState: String = ""
+
     @State private var chordSum: ChordsSum = .one
     @State private var rowCount: RowCount = .one
     @State private var learnMode: LearnMode = .none
@@ -807,6 +855,9 @@ struct Settings: View {
             
             TextField("Has to chords", text: $hasTochords, onEditingChanged: { (returnType) in }, onCommit: {})
 
+            TextField("Range", text: $learnRangeState, onEditingChanged: { (returnType) in }, onCommit: {})
+                .keyboardType(.numberPad)
+
             Spacer()
         }
         .onAppear {
@@ -815,6 +866,7 @@ struct Settings: View {
             useDegree = settings.useDegree
             hasToEveryLine = settings.hasToEveryLine
             learnMode = settings.learnMode
+            learnRangeState = String(learnRange)
         }
         .onChange(of: chordSum, perform: { newValue in
             settings.chordsSum = newValue
@@ -835,6 +887,13 @@ struct Settings: View {
         .onChange(of: learnMode, perform: { newValue in
             settings.learnMode = newValue
             UserDefaults.standard.set(newValue.getAsInteger(), forKey: "learnMode")
+        })
+        .onChange(of: learnRangeState, perform: { newValue in
+            if let tmpRange = Int(newValue) {
+                learnRange = tmpRange
+            } else {
+                learnRange = 0
+            }
         })
     }
 }
