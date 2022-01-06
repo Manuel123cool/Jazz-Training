@@ -240,14 +240,6 @@ struct ContentView: View {
                         .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
                         .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                         .background(Color.orange)
-                        
-                        if settings.chordsSum == .two || settings.chordsSum == .random {
-                            Text("\(Int.random(in: 0...learnRange))")
-                                .font(.system(size: 20))
-                            .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
-                            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                            .offset(x: PercSize.width(10))
-                        }
                     }
                 }
             }
