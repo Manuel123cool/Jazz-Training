@@ -86,24 +86,6 @@ enum LearnMode {
     }
 }
 
-struct DeviceRotationViewModifier: ViewModifier {
-    let action: (UIDeviceOrientation) -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .onAppear()
-            .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
-                action(UIDevice.current.orientation)
-            }
-    }
-}
-
-extension View {
-    func onRotate(perform action: @escaping (UIDeviceOrientation) -> Void) -> some View {
-        self.modifier(DeviceRotationViewModifier(action: action))
-    }
-}
-
 struct ContentView: View {
     @State private var settings = SettingsData()
     @State private var showSheet = false
@@ -125,8 +107,6 @@ struct ContentView: View {
     @State private var hasToChordsArray = [String]()
     @State private var hasToChords: String = ""
 
-    @State private var orientation = UIDeviceOrientation.unknown
-
     @State private var learnRange = 0
     
     var body: some View {
@@ -147,6 +127,20 @@ struct ContentView: View {
                     whichModeView2
                 }
                 chordsView2
+                    .onTapGesture {
+                        hasToChordsArray = hasToChordGen()
+                        chords = chordGen()
+                        
+                        let chordState = reChordsState()
+                        chordsStringsState = chordState.0
+                        chordsDegreeState = chordState.1
+                        chordsStringsState2 = chordState.2
+                        chordsDegreeState2 = chordState.3
+                        whichScaleStates.0 = chordState.4
+                        whichScaleStates.1 = chordState.5
+
+                        useDegree = UserDefaults.standard.bool(forKey: "useDegree")
+                    }
                 if settings.learnMode == .randomNotes {
                     extraPracticView2
                 } else if settings.learnMode == .randomNumber {
@@ -217,16 +211,6 @@ struct ContentView: View {
         .onChange(of: learnRange, perform: { newValue in
             print("Test2")
             UserDefaults.standard.set(newValue, forKey: "learnRange")
-        })
-        .onRotate(perform: { newOrientation in
-            orientation = newOrientation
-            chords = chordGen()
-            
-            let chordState = reChordsState()
-            chordsStringsState = chordState.0
-            chordsDegreeState = chordState.1
-            chordsStringsState2 = chordState.2
-            chordsDegreeState2 = chordState.3
         })
     }
     
@@ -543,6 +527,8 @@ struct ContentView: View {
                     reChords.1.append(getDegree(whichScale: scaleCount,
                                                 whichChord: allNum)
                     )
+                    reChords.2.append(scaleCount)
+                    
                 }
                 continue
             }
@@ -552,6 +538,8 @@ struct ContentView: View {
             reChords.1.append(getDegree(whichScale: scaleCount,
                                         whichChord: (Int(String(selectedLetter)) ?? 0) - 1)
             )
+            reChords.2.append(scaleCount)
+            
         }
         return reChords
     }
@@ -635,12 +623,13 @@ struct ContentView: View {
                         reStrings.0.append("")
                         reStrings.1.append("")
                         reStrings.4.append(-1)
+                        continue
                     } else if count >=  13 {
                         reStrings.2.append("")
                         reStrings.3.append("")
                         reStrings.5.append(-1)
+                        continue
                     }
-                    continue
                 }
                 
                 if count <= 8 {
@@ -742,6 +731,7 @@ struct ContentView: View {
         if chords.0.count == 0 {
             return ("", "", 0)
         }
+        print(chords.2.count)
         let randomInt = Int.random(in: 0..<chords.0.count)
         return (chords.0[randomInt], chords.1[randomInt], chords.2[randomInt])
     }
@@ -765,10 +755,10 @@ struct ContentView: View {
             
             "Co|E♭o|F#o|Ao",
             "D♭o|Eo|Go|B♭0",
-            "Do|Fo|A♭o|Ho",
+            "Do|Fo|A♭o|Bo",
             
-            "C+|D+|E+|F♯+|G♯+|A♯+",
-            "D♯+|D♯+|F+|G+|A+|H+",
+            "C7+|D7+|E7+|F♯7+|G♯7+|A♯7+",
+            "C♯7+|D♯7+|F7+|G7+|A7+|B7+",
             
             "C-6|Aø|Balt",
             "D♭-6|B♭ø|Calt",
