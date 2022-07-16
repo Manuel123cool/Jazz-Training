@@ -61,7 +61,7 @@ enum RowCount {
 }
 
 enum LearnMode {
-    case none, randomNotes, randomNumber
+    case none, randomNotes, randomNumber, twoRandomNotes
     
     func getAsInteger() -> Int {
         switch self {
@@ -69,8 +69,10 @@ enum LearnMode {
                 return 1
             case .randomNotes:
                 return 2
-        case .randomNumber:
-            return 3
+            case .randomNumber:
+                return 3
+            case .twoRandomNotes:
+                return 4
         }
     }
         
@@ -80,8 +82,12 @@ enum LearnMode {
                 self = .none
             case 2:
                 self = .randomNotes
-            default:
+            case 3:
                 self = .randomNumber
+            case 4:
+                self = .twoRandomNotes
+            default:
+            self = .none
         }
     }
 }
@@ -104,7 +110,7 @@ struct ContentView: View {
 
     @State private var chords: ([String], [String], [Int]) = ([], [], [])
     
-    @State private var hasToChordsArray = [String]()
+    @State private var hasToChordsArray = [(String, Int)]()
     @State private var hasToChords: String = ""
 
     @State private var learnRange = 0
@@ -118,8 +124,11 @@ struct ContentView: View {
             if settings.learnMode == .randomNotes {
                 extraPracticView
                     .padding(.bottom, 5)
-            } else if settings.learnMode == .randomNumber{
+            } else if settings.learnMode == .randomNumber {
                 randomNumView
+                    .padding(.bottom, 5)
+            } else if settings.learnMode == .twoRandomNotes {
+                twoRandomNotesView
                     .padding(.bottom, 5)
             }
             if settings.rowCount == .double {
@@ -145,7 +154,11 @@ struct ContentView: View {
                     extraPracticView2
                 } else if settings.learnMode == .randomNumber {
                     randomNumView
+                } else if settings.learnMode == .twoRandomNotes {
+                    twoRandomNotesView
+                        .padding(.bottom, 5)
                 }
+                
             }
             Button(action: {
                 hasToChordsArray = hasToChordGen()
@@ -212,6 +225,54 @@ struct ContentView: View {
             print("Test2")
             UserDefaults.standard.set(newValue, forKey: "learnRange")
         })
+    }
+    
+    var twoRandomNotesView: some View {
+        HStack(spacing: 0) {
+            if chordsDegreeState.count > 0 {
+                ForEach(0..<4) { count in
+                    ZStack {
+                        Text(genRandomNoteOfScale(count, false) + "-" + genRandomNoteOfScale(count, false))
+                            .font(.system(size: 20))
+                        .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .background(Color.orange)
+                        
+                        if settings.chordsSum == .two || settings.chordsSum == .random {
+                            Text(genRandomNoteOfScale(count + 4, false) + "-" + genRandomNoteOfScale(count + 4, false))
+                                .font(.system(size: 20))
+                            .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
+                            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .offset(x: PercSize.width(10))
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    var twoRandomNotesView2: some View {
+        HStack(spacing: 0) {
+            if chordsDegreeState.count > 0 {
+                ForEach(0..<4) { count in
+                    ZStack {
+                        Text(genRandomNoteOfScale(count, true) + "-" + genRandomNoteOfScale(count, true))
+                            .font(.system(size: 20))
+                        .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .background(Color.orange)
+                        
+                        if settings.chordsSum == .two || settings.chordsSum == .random {
+                            Text(genRandomNoteOfScale(count + 4, true) + "-" + genRandomNoteOfScale(count + 4, true))
+                                .font(.system(size: 20))
+                            .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
+                            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .offset(x: PercSize.width(10))
+                        }
+                    }
+                }
+            }
+        }
     }
     
     var randomNumView: some View {
@@ -292,9 +353,9 @@ struct ContentView: View {
         }
 
         var length = 7
-        if scale > 12 && scale < 15 { length = 3 }
-        if scale > 15 && scale < 17 { length = 2 }
-        if scale > 16 { length = 3 }
+        if scale > 12 && scale < 15 { length = 8 }
+        if scale > 15 && scale < 17 { length = 6 }
+        if scale > 16 { length = 7 }
         
         let randomInt = Int.random(in: 0...length)
         return cutOffToNote(getFromAllChord(whichScale: scale, whichChord: randomInt))
@@ -427,8 +488,8 @@ struct ContentView: View {
         }
     }
     
-    func hasToChordGen() -> [String] {
-        var reHasToChords = [String]()
+    func hasToChordGen() -> [(String, Int)] {
+        var reHasToChords: [(String, Int)] = []
         
         var currentIsScaleCount = false
         var currentIsChordCount = false
@@ -438,8 +499,9 @@ struct ContentView: View {
         
         for selectedLetter in hasToChords {
             if selectedLetter == ")" {
-                reHasToChords.append(getFromAllChord(whichScale: (Int(String(scaleCount)) ?? 0) - 1,
-                                                        whichChord: (Int(String(chordCount)) ?? 0) - 1))
+                reHasToChords.append((getFromAllChord(whichScale: (Int(String(scaleCount)) ?? 0) - 1,
+                                                      whichChord: (Int(String(chordCount)) ?? 0) - 1),
+                                     (Int(String(scaleCount)) ?? 0) - 1))
 
                 scaleCount = ""
                 chordCount = ""
@@ -516,8 +578,8 @@ struct ContentView: View {
             
             if (Int(String(selectedLetter)) ?? 0) == 9 {
                 var length = 7
-                if scaleCount > 12 && scaleCount < 15 { length = 3 }
-                if scaleCount > 15 && scaleCount < 17 { length = 2 }
+                if scaleCount > 12 && scaleCount < 15 { length = 4 }
+                if scaleCount > 15 && scaleCount < 17 { length = 6 }
                 if scaleCount > 16 { length = 3 }
                 
                 for allNum in 0..<length {
@@ -530,6 +592,9 @@ struct ContentView: View {
                     reChords.2.append(scaleCount)
                     
                 }
+                continue
+            }
+            if selectedLetter == "0" {
                 continue
             }
             reChords.0.append(getFromAllChord(whichScale: scaleCount,
@@ -550,9 +615,9 @@ struct ContentView: View {
         } else if whichScale > 16 {
             switch whichChord {
                 case 0:
-                    return "HM1"
+                    return "MM1"
                 case 1:
-                    return "HM6"
+                    return "MM6"
                 case 2:
                     return "Alt"
                 default:
@@ -646,17 +711,20 @@ struct ContentView: View {
                 
                 if count <= 8 {
                     if settings.chordsSum == .one {
-                        if checkIfStringInThere(firstArray: reStrings.0, secondArray: hasToChordsArray, true) {
+                        if checkIfStringInThere(firstArray:
+                                                    convertToEnumArray(reStrings.0, reStrings.4), secondArray: hasToChordsArray, true) {
                             comesFromLine = .first
                         }
                     } else {
-                        if checkIfStringInThere(firstArray: reStrings.0, secondArray: hasToChordsArray, false) {
+                        if checkIfStringInThere(firstArray:
+                                                    convertToEnumArray(reStrings.0, reStrings.4), secondArray: hasToChordsArray, false) {
                             comesFromLine = .first
                         }
                     }
-                } else if count > 8{
+                } else if count > 8 {
                     if settings.chordsSum == .one {
-                        if checkIfStringInThere(firstArray: reStrings.2, secondArray: hasToChordsArray, true) {
+                        if checkIfStringInThere(firstArray:
+                                                    convertToEnumArray(reStrings.2, reStrings.5), secondArray: hasToChordsArray, true) {
                             if comesFromLine == .first {
                                 comesFromLine = .both
                             } else if comesFromLine == .both {
@@ -666,7 +734,8 @@ struct ContentView: View {
                             }
                         }
                     } else {
-                        if checkIfStringInThere(firstArray: reStrings.2, secondArray: hasToChordsArray, false) {
+                        if checkIfStringInThere(firstArray:
+                                                    convertToEnumArray(reStrings.2, reStrings.5), secondArray: hasToChordsArray, false) {
                             if comesFromLine == .first {
                                 comesFromLine = .both
                             } else if comesFromLine == .both {
@@ -695,7 +764,16 @@ struct ContentView: View {
         return reStrings
     }
     
-    func checkIfStringInThere(firstArray: [String], secondArray: [String], _ onlyFirst4: Bool) -> Bool {
+    func convertToEnumArray(_ chordNames: [String], _ whichScales: [Int]) -> [(String, Int)] {
+        var reEnumArray: [(String, Int)] = []
+        
+        for (index, chordName) in chordNames.enumerated() {
+            reEnumArray.append((chordName, whichScales[index]))
+        }
+        return reEnumArray
+    }
+    
+    func checkIfStringInThere(firstArray: [(String, Int)], secondArray: [(String, Int)], _ onlyFirst4: Bool) -> Bool {
         for (count1, firstArrayElem) in firstArray.enumerated() {
             for secondArrayElem in secondArray {
                 if firstArrayElem == secondArrayElem && !onlyFirst4 {
@@ -741,9 +819,9 @@ struct ContentView: View {
         //https://learningmusic.ableton.com/de/advanced-topics/building-major-scales.html
         reAllChord = [
             "C△|D-7|E-7|F△|G7|A-7|Bø",
-            "D♭△|E♭-7|F-7|G♭△|Ab7|B♭-7|Cø",
+            "D♭△|E♭-7|F-7|G♭△|A♭7|B♭-7|Cø",
             "D△|E-7|F♯-7|G△|A7|B-7|C♯ø",
-            "E♭△|F-7|G-7|Ab△|B♭7|C-7|Dø",
+            "E♭△|F-7|G-7|A♭△|B♭7|C-7|Dø",
             "E△|F♯-7|G♯-7|A△|B7|C♯-7|D♯ø",
             "F△|G-7|A-7|B♭△|C7|D-7|Eø",
             "F♯△|G♯-7|A♯-7|B△|C♯7|D♯-7|E♯ø",
@@ -753,25 +831,25 @@ struct ContentView: View {
             "B♭△|C-7|D-7|E♭△|F7|G-7|Aø",
             "B△|C♯-7|D♯-7|E△|F♯7|G♯-7|A♯ø",
             
-            "Co|E♭o|F#o|Ao",
-            "D♭o|Eo|Go|B♭0",
-            "Do|Fo|A♭o|Bo",
+            "Co|E♭o|F#o|Ao|D|F|A♭|B",
+            "D♭o|Eo|Go|B♭|D♯|F♯|A|B♭",
+            "Do|Fo|A♭o|Bo|E|G|A♯|C",
             
             "C7+|D7+|E7+|F♯7+|G♯7+|A♯7+",
             "C♯7+|D♯7+|F7+|G7+|A7+|B7+",
             
-            "C-6|Aø|Balt",
-            "D♭-6|B♭ø|Calt",
-            "D-6|Bø|C♯alt",
-            "E♭-6|Cø|Dalt",
-            "E-6|C♯ø|D♯alt",
-            "F-6|Dø|Ealt",
-            "F♯-6|D♯ø|E♯alt",
-            "G-6|Eø|F♯alt",
-            "A♭-6|Fø|Galt",
-            "A-6|F♯ø|G♯alt",
-            "B♭-6|Gø|Aalt",
-            "B-6|G♯ø|A♯alt",
+            "C-6|Aø|Balt|D|E♭|F|G",
+            "D♭-6|B♭ø|Calt|E♭|E|G♭|A♭",
+            "D-6|Bø|C♯alt|E|F|G△|A",
+            "E♭-6|Cø|Dalt|F|G♭|A♭|B♭",
+            "E-6|C♯ø|D♯alt|F♯|G|A|B",
+            "F-6|Dø|Ealt|G|A♭|B♭|C",
+            "F♯-6|D♯ø|E♯alt|G♯|A|B|C♯",
+            "G-6|Eø|F♯altA|B♭|C|D",
+            "A♭-6|Fø|GaltB♭|C♭|D♭|E♭",
+            "A-6|F♯ø|G♯alt|B|C|D|E",
+            "B♭-6|Gø|Aalt|C|D♭|E♭|F",
+            "B-6|G♯ø|A♯alt|C♯|D|E|F♯",
         ]
         return reAllChord
     }
@@ -826,6 +904,7 @@ struct Settings: View {
                 Text("None").tag(LearnMode.none)
                 Text("Random Note").tag(LearnMode.randomNotes)
                 Text("Random Num").tag(LearnMode.randomNumber)
+                Text("T. R. Notes").tag(LearnMode.twoRandomNotes)
             })
             .pickerStyle(SegmentedPickerStyle())
             .padding(.top, 20)
