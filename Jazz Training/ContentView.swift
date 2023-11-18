@@ -1,4 +1,4 @@
-//
+//x
 //  ContentView.swift
 //  Jazz Training
 //
@@ -11,7 +11,7 @@ import CoreData
 enum ChordsSum {
     case one, two, random
     
-    func getAsInteger() -> Int {
+    func getAsInteger() -> Int { 
         switch self {
             case .one:
                 return 1
@@ -115,6 +115,8 @@ struct ContentView: View {
 
     @State private var learnRange = 0
     
+    @State private var allRanNum = [Int]()
+    
     var body: some View {
         VStack(spacing: 0) {
             if useDegree {
@@ -125,7 +127,7 @@ struct ContentView: View {
                 extraPracticView
                     .padding(.bottom, 5)
             } else if settings.learnMode == .randomNumber {
-                randomNumView
+                randomNumView1
                     .padding(.bottom, 5)
             } else if settings.learnMode == .twoRandomNotes {
                 twoRandomNotesView
@@ -149,11 +151,13 @@ struct ContentView: View {
                         whichScaleStates.1 = chordState.5
 
                         useDegree = UserDefaults.standard.bool(forKey: "useDegree")
+                        
+                        allRanNum = createNewRanNum()
                     }
                 if settings.learnMode == .randomNotes {
                     extraPracticView2
                 } else if settings.learnMode == .randomNumber {
-                    randomNumView
+                    randomNumView2
                 } else if settings.learnMode == .twoRandomNotes {
                     twoRandomNotesView
                         .padding(.bottom, 5)
@@ -173,12 +177,20 @@ struct ContentView: View {
                 whichScaleStates.1 = chordState.5
 
                 useDegree = UserDefaults.standard.bool(forKey: "useDegree")
+                
+                allRanNum = createNewRanNum()
             }, label: {
                 Text("Next")
                     .font(.system(size: 25))
                     .padding(.top, 40)
             })
             
+            Button(action: {
+                allRanNum = createNewRanNum()
+            }, label: {
+                Text("Change Learn Letter")
+                    .font(.system(size: 25))
+            })
             Spacer()
         }
         .onTapGesture {
@@ -209,6 +221,8 @@ struct ContentView: View {
             chordsDegreeState2 = chordState.3
             whichScaleStates.0 = chordState.4
             whichScaleStates.1 = chordState.5
+            
+            allRanNum = createNewRanNum()
             
             UIApplication.shared.isIdleTimerDisabled = true
         }
@@ -275,12 +289,28 @@ struct ContentView: View {
         }
     }
     
-    var randomNumView: some View {
+    var randomNumView1: some View {
         HStack(spacing: 0) {
             if chordsDegreeState.count > 0 && learnRange > 0 {
                 ForEach(0..<4) { count in
                     ZStack {
-                        Text("\(Int.random(in: 1...learnRange))")
+                        Text("\(allRanNum[count])")
+                            .font(.system(size: 20))
+                        .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .background(Color.orange)
+                    }
+                }
+            }
+        }
+    }
+    
+    var randomNumView2: some View {
+        HStack(spacing: 0) {
+            if chordsDegreeState.count > 0 && learnRange > 0 {
+                ForEach(0..<4) { count in
+                    ZStack {
+                        Text("\(allRanNum[count + 4])")
                             .font(.system(size: 20))
                         .frame(width: PercSize.width(20), height: PercSize.heigth(6), alignment: .bottomLeading)
                         .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -337,6 +367,14 @@ struct ContentView: View {
                 }
             }
         }
+    }
+    
+    func createNewRanNum() -> [Int] {
+        var reArray = [Int]()
+        for _ in 0..<8 {
+            reArray.append(Int.random(in: 1...learnRange))
+        }
+        return reArray
     }
     
     func genRandomNoteOfScale(_ scaleRefernce: Int, _ secondLine: Bool) -> String {
@@ -536,10 +574,10 @@ struct ContentView: View {
             
             for whichScale in 0..<allChords.count {
                 var length = 7
-                if whichScale > 12 && whichScale < 15 { length = 3 }
-                if whichScale > 15 && whichScale < 17 { length = 2 }
-                if whichScale > 16 { length = 3 }
-
+                if whichScale > 11 && whichScale < 15 { length = 8 }
+                if whichScale > 15 && whichScale < 17 { length = 6 }
+                if whichScale > 16 { length = 4 }
+                
                 for count in 0..<length {
                     reChords.0.append(getFromAllChord(whichScale: whichScale, whichChord: count))
                     reChords.1.append(getDegree(whichScale: whichScale, whichChord: count))
@@ -578,9 +616,9 @@ struct ContentView: View {
             
             if (Int(String(selectedLetter)) ?? 0) == 9 {
                 var length = 7
-                if scaleCount > 12 && scaleCount < 15 { length = 4 }
+                if scaleCount > 11 && scaleCount < 15 { length = 8 }
                 if scaleCount > 15 && scaleCount < 17 { length = 6 }
-                if scaleCount > 16 { length = 3 }
+                if scaleCount > 16 { length = 4 }
                 
                 for allNum in 0..<length {
                     reChords.0.append(getFromAllChord(whichScale: scaleCount,
@@ -609,20 +647,101 @@ struct ContentView: View {
         return reChords
     }
     
+//    func getDegree(whichScale: Int, whichChord: Int) -> String {
+//        if whichScale < 12 {
+//            return String(whichChord + 1)
+//        } else if whichScale > 16 {
+//            switch whichChord {
+//                case 0, 3:
+//                    return "MM1"
+//                case 1:
+//                    return "MM6"
+//                case 2:
+//                    return "Alt"
+//                default:
+//                    break
+//            }
+//        } else if whichScale == 15 {
+//            return "1"
+//        } else if whichScale == 16 {
+//            return "2"
+//        } else if whichScale > 11 && whichScale < 15 {
+//            switch whichScale {
+//                case 12:
+//                    return "1"
+//                case 13:
+//                    return "2"
+//                case 14:
+//                    return "3"
+//                default:
+//                    break
+//            }
+//        }
+//        return " "
+//    }
+    
     func getDegree(whichScale: Int, whichChord: Int) -> String {
+        var addString = ""
+        
+        switch whichScale {
+            case 0:
+                addString = "C Dur"
+            case 1:
+                addString = "D♭ Dur"
+            case 2:
+                addString = "D Dur"
+            case 3:
+                addString = "E♭ Dur"
+            case 4:
+                addString = "E Dur"
+            case 5:
+                addString = "F Dur"
+            case 6:
+                addString = "G♭ Dur"
+            case 7:
+                addString = "G Dur"
+            case 8:
+                addString = "A♭ Dur"
+            case 9:
+                addString = "A Dur"
+            case 10:
+                addString = "B♭ Dur"
+            case 11:
+                addString = "B Dur"
+            
+            case 17:
+                addString = "C MM"
+            case 18:
+                addString = "D♭ MM"
+            case 19:
+                addString = "D MM"
+            case 20:
+                addString = "E♭ MM"
+            case 21:
+                addString = "E MM"
+            case 22:
+                addString = "F MM"
+            case 23:
+                addString = "G♭ MM"
+            case 24:
+                addString = "G MM"
+            case 25:
+                addString = "A♭ MM"
+            case 26:
+                addString = "A MM"
+            case 27:
+                addString = "B♭ MM"
+            case 28:
+                addString = "B MM"
+        
+            default:
+                break
+        }
+        
         if whichScale < 12 {
-            return String(whichChord + 1)
+            return addString
         } else if whichScale > 16 {
-            switch whichChord {
-                case 0:
-                    return "MM1"
-                case 1:
-                    return "MM6"
-                case 2:
-                    return "Alt"
-                default:
-                    break
-            }
+            return addString
         } else if whichScale == 15 {
             return "1"
         } else if whichScale == 16 {
@@ -639,9 +758,37 @@ struct ContentView: View {
                     break
             }
         }
+//        if whichScale < 12 {
+//            return String(whichChord + 1) + addString
+//        } else if whichScale > 16 {
+//            switch whichChord {
+//                case 0:
+//                    return "MM1" + addString
+//                case 1:
+//                    return "MM6" + addString
+//                case 2:
+//                    return "Alt" + addString
+//                default:
+//                    break
+//            }
+//        } else if whichScale == 15 {
+//            return "1"
+//        } else if whichScale == 16 {
+//            return "2"
+//        } else if whichScale > 11 && whichScale < 15 {
+//            switch whichScale {
+//                case 12:
+//                    return "1"
+//                case 13:
+//                    return "2"
+//                case 14:
+//                    return "3"
+//                default:
+//                    break
+//            }
+//        }
         return " "
     }
-    
     func reYesNo() -> Bool {
         let randomInt = Int.random(in: 0..<2)
         if randomInt == 0 {
@@ -761,6 +908,25 @@ struct ContentView: View {
                 break
             }
         }
+        
+        if settings.chordsSum == .random {
+            var countHowMany = 0
+            for intFromDegree in reStrings.4 {
+                if intFromDegree == -1 {
+                    countHowMany += 1
+                }
+            }
+            for intFromDegree in reStrings.5 {
+                if intFromDegree == -1 {
+                    countHowMany += 1
+                }
+            }
+            if countHowMany == 4 {
+                return reStrings
+            } else {
+                return reChordsState()
+            }
+        }
         return reStrings
     }
     
@@ -831,25 +997,25 @@ struct ContentView: View {
             "B♭△|C-7|D-7|E♭△|F7|G-7|Aø",
             "B△|C♯-7|D♯-7|E△|F♯7|G♯-7|A♯ø",
             
-            "Co|E♭o|F#o|Ao|D|F|A♭|B",
-            "D♭o|Eo|Go|B♭|D♯|F♯|A|B♭",
-            "Do|Fo|A♭o|Bo|E|G|A♯|C",
-            
+            "Co|E♭o|F#o|Ao|B7⁽ᵇ⁹⁾|D7⁽ᵇ⁹⁾|F7⁽ᵇ⁹⁾|A♭7⁽ᵇ⁹⁾",
+            "D♭o|Eo|Go|B♭o|C7⁽ᵇ⁹⁾|E♭7⁽ᵇ⁹⁾|G♭7⁽ᵇ⁹⁾|A7⁽ᵇ⁹⁾",
+            "Do|Fo|A♭o|Bo|B♭7⁽ᵇ⁹⁾|C♯7⁽ᵇ⁹⁾|E7⁽ᵇ⁹⁾|G7⁽ᵇ⁹⁾",
+
             "C7+|D7+|E7+|F♯7+|G♯7+|A♯7+",
             "C♯7+|D♯7+|F7+|G7+|A7+|B7+",
             
-            "C-6|Aø|Balt|D|E♭|F|G",
-            "D♭-6|B♭ø|Calt|E♭|E|G♭|A♭",
-            "D-6|Bø|C♯alt|E|F|G△|A",
-            "E♭-6|Cø|Dalt|F|G♭|A♭|B♭",
-            "E-6|C♯ø|D♯alt|F♯|G|A|B",
-            "F-6|Dø|Ealt|G|A♭|B♭|C",
-            "F♯-6|D♯ø|E♯alt|G♯|A|B|C♯",
-            "G-6|Eø|F♯altA|B♭|C|D",
-            "A♭-6|Fø|GaltB♭|C♭|D♭|E♭",
-            "A-6|F♯ø|G♯alt|B|C|D|E",
-            "B♭-6|Gø|Aalt|C|D♭|E♭|F",
-            "B-6|G♯ø|A♯alt|C♯|D|E|F♯",
+            "C-6|Aø|Balt|C-△|E♭|F|G",
+            "D♭-6|B♭ø|Calt|D♭-△|E|G♭|A♭",
+            "D-6|Bø|C♯alt|D-△|F|G△|A",
+            "E♭-6|Cø|Dalt|E♭-△|G♭|A♭|B♭",
+            "E-6|C♯ø|D♯alt|E-△|G|A|B",
+            "F-6|Dø|Ealt|F-△|A♭|B♭|C",
+            "F♯-6|D♯ø|E♯alt|F♯-△|A|B|C♯",
+            "G-6|Eø|F♯alt|G-△|A♯|C|D",
+            "A♭-6|Fø|Galt|A♭-△|B|D♭|E♭",
+            "A-6|F♯ø|G♯alt|A-△|C|D|E",
+            "B♭-6|Gø|Aalt|B♭-△|D♭|E♭|F",
+            "B-6|G♯ø|A♯alt|B-△|D|E|F♯",
         ]
         return reAllChord
     }
